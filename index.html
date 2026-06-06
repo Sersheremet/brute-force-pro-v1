@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>🛠️ Словниковий Брутфорс-Тестер Без Обмежень</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0080ff">
+  
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BrutePRO">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <script src="https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js"></script>
+  
+  <script>
+    // Автоматична реєстрація фонового Service Worker для автономної роботи
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('Service Worker успішно зареєстровано!', reg))
+          .catch(err => console.log('Помилка реєстрації Service Worker:', err));
+      });
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 1.5em;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+    h2 {
+      color: #0080ff;
+      border-bottom: 2px solid #0080ff;
+      padding-bottom: 0.3em;
+      margin-bottom: 1em;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border: 1px solid #e0e0e0;
+    }
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 0.5em;
+    }
+    textarea, input[type="text"], input[type="file"], input[type="date"], input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    textarea {
+      height: 80px;
+      resize: vertical;
+    }
+    .grid-group {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .checkbox-item {
+      font-weight: normal;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .date-picker-container {
+      margin-top: 8px;
+      max-width: 250px;
+      transition: opacity 0.2s;
+    }
+    .range-container {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+      margin-top: 5px;
+    }
+    .range-container input[type="date"] {
+      padding: 6px;
+      font-size: 13px;
+    }
+    .btn-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    button {
+      font-size: 1.05em;
+      font-weight: bold;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      padding: 14px;
+    }
+    #startBtn { flex: 2; background-color: #0080ff; }
+    #startBtn:hover { background-color: #0066cc; }
+    #resumeBtn { flex: 1.5; background-color: #28a745; display: none; }
+    #resumeBtn:hover { background-color: #218838; }
+    #pauseBtn { flex: 1; background-color: #ffc107; color: #212529; }
+    #pauseBtn:hover { background-color: #e0a800; }
+    #stopBtn { flex: 1; background-color: #dc3545; }
+    #stopBtn:hover { background-color: #bd2130; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    #statusText {
+      margin-top: 1em;
+      font-size: 1.1em;
+      font-weight: bold;
+      color: #0066cc;
+      text-align: center;
+      background: #e6f2ff;
+      padding: 12px;
+      border-radius: 4px;
+      border: 1px solid #b3d7ff;
+      line-height: 1.4em;
+    }
+    #log {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      height: 280px;
+      overflow-y: auto;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      margin-top: 0.5em;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+    }
+    .small-desc { font-size: 0.85em; color: #666; margin-top: 0.3em; }
+    .or-separator {
+      text-align: center; margin: 15px 0; font-weight: bold; color: #999; position: relative;
+    }
+    .or-separator::before, .or-separator::after {
+      content: ""; position: absolute; top: 50%; width: 42%; height: 1px; background: #ccc;
+    }
+    .or-separator::before { left: 0; } .or-separator::after { right: 0; }
+    .log-header { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5em; }
+    .length-inputs { display: flex; gap: 10px; align-items: center; margin-top: 5px; }
+    .length-inputs input { width: 70px; padding: 5px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h2>🛠️ Універсальний Брутфорс-Тестер (Словниковий PRO)</h2>
+  
+  <div class="section">
+    <label>1. Що розшифровуємо? (Оберіть щось одне)</label>
+    <input type="file" id="fileInput" onchange="toggleInputs('file')" />
+    <div class="small-desc">Вкажіть файл `.enc`, якщо потрібно підібрати пароль до файлу.</div>
+    <div class="or-separator">АБО</div>
+    <textarea id="encryptedText" placeholder="Вставте Base64 рядок тексту тут..." oninput="toggleInputs('text')"></textarea>
+  </div>
+
+  <div class="section">
+    <label for="dictionaryInput">🌟 2. Введіть ВАШІ СЛОВА / елементи (через кому) — ОСНОВНА ОПЦІЯ:</label>
+    <input type="text" id="dictionaryInput" placeholder="Наприклад: слово1, слово2, 123, кіт">
+    
+    <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+    
+    <label style="font-size: 0.95em; color: #555;">➕ Додаткові поодинокі символи до словника (Опціонально):</label>
+    <div class="grid-group">
+      <label class="checkbox-item"><input type="checkbox" id="setDigits"> 🔢 Цифри (0-9)</label>
+      <label class="checkbox-item"><input type="checkbox" id="setLatLow"> 🔤 (a-z)</label>
+      <label class="checkbox-item"><input type="checkbox" id="setLatUp"> 🔠 (A-Z)</label>
+      <label class="checkbox-item"><input type="checkbox" id="setCyrLow"> 📋 (а-я)</label>
+      <label class="checkbox-item"><input type="checkbox" id="setCyrUp"> 📋 (А-Я)</label>
+    </div>
+  </div>
+
+  <div class="section grid-group">
+    <div>
+      <label class="checkbox-item"><input type="checkbox" id="useDynamic" onchange="toggleDateVisibility()" /> 🌤️ Динамічний режим</label>
+      <div class="date-picker-container" id="dateContainer" style="opacity: 0.3;">
+        <label id="singleDateLabel" style="font-weight: normal; font-size: 0.9em; margin-bottom: 4px;">Точна дата:</label>
+        <input type="date" id="cipherDate" disabled>
+        
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 6px;">
+          <label class="checkbox-item" style="font-size: 0.85em;">
+            <input type="checkbox" id="bruteAllDates" onchange="toggleDateMode('all')" disabled> 📅 Перебирати весь рік (365 днів)
+          </label>
+          <label class="checkbox-item" style="font-size: 0.85em;">
+            <input type="checkbox" id="bruteRangeDates" onchange="toggleDateMode('range')" disabled> ⏳ Перебирати діапазон дат
+          </label>
+        </div>
+
+        <div id="rangePickers" class="range-container" style="display: none; opacity: 0.5;">
+          <input type="date" id="dateFrom" disabled>
+          <span>до</span>
+          <input type="date" id="dateTo" disabled>
+        </div>
+      </div>
+    </div>
+    <div>
+      <label>⚙️ Оптимізація та безпека:</label>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:5px;">
+        <label class="checkbox-item"><input type="checkbox" id="uniqueCombos" /> 🎯 Тільки унікальні комбінації (без дублів ваших слів в одному паролі)</label>
+        
+        <div style="border-top: 1px dashed #ddd; padding-top: 5px; margin-top: 2px;">
+          <label style="font-weight: normal; font-size: 0.9em; margin-bottom: 2px;">📏 Довжина пароля (в символах):</label>
+          <div class="length-inputs">
+            <span>від</span><input type="number" id="minLen" value="1" min="1">
+            <span>до</span><input type="number" id="maxLen" value="6" min="1">
+          </div>
+        </div>
+
+        <label class="checkbox-item" style="margin-top:5px;"><input type="checkbox" id="useSuperSecure" /> 💪 "Супер шифрування" (100 ітер.)</label>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-container">
+    <button id="startBtn" onclick="initBruteForce(false)">🚀 Запустити новий перебір</button>
+    <button id="resumeBtn" onclick="initBruteForce(true)">▶️ Відновити прогрес</button>
+    <button id="pauseBtn" onclick="triggerPause()" disabled>⏸️ Пауза</button>
+    <button id="stopBtn" onclick="triggerStop()" disabled>🛑 Скинути</button>
+  </div>
+
+  <div id="statusText">Статус: Очікування вибору даних</div>
+  
+  <div class="log-header">
+    <label style="margin: 0;">Журнал перевірки (Лог):</label>
+    <label class="checkbox-item" style="font-size: 0.9em;">
+      <input type="checkbox" id="autoScrollCheck" checked /> ⬇️ Автоскрол логу
+    </label>
+  </div>
+  <div id="log">Тут відображатимуться спроби підбору...</div>
+
+  <script>
+    let isRunning = false;
+    let isPaused = false;
+    let currentIdx = 0;
+    let totalCheckedCount = 0;
+    let elementsGlobal = [];
+    let uniqueCombosGlobal = false;
+    let daysToTest = [];
+    let globalFullBytes = null;
+    let globalFileName = "data.txt";
+    let savedProgress = null;
+    let timePerAttemptSec = 0.05;
+    let bruteStartTime = 0;
+
+    let minLenGlobal = 1;
+    let maxLenGlobal = 6;
+    let totalEstimatedCombos = 0;
+
+    window.onload = function() {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('cipherDate').value = today;
+      document.getElementById('dateFrom').value = today;
+      document.getElementById('dateTo').value = today;
+      
+      checkSavedSession();
+    };
+
+    function checkSavedSession() {
+      const saved = localStorage.getItem("brute_force_session_v6");
+      if (saved) {
+        try {
+          savedProgress = JSON.parse(saved);
+          
+          document.getElementById("dictionaryInput").value = savedProgress.uiData.dictionaryInput || "";
+          document.getElementById("encryptedText").value = savedProgress.uiData.encryptedText || "";
+          document.getElementById("minLen").value = savedProgress.uiData.minLen || "1";
+          document.getElementById("maxLen").value = savedProgress.uiData.maxLen || "6";
+          
+          document.getElementById("setDigits").checked = !!savedProgress.uiData.setDigits;
+          document.getElementById("setLatLow").checked = !!savedProgress.uiData.setLatLow;
+          document.getElementById("setLatUp").checked = !!savedProgress.uiData.setLatUp;
+          document.getElementById("setCyrLow").checked = !!savedProgress.uiData.setCyrLow;
+          document.getElementById("setCyrUp").checked = !!savedProgress.uiData.setCyrUp;
+          document.getElementById("uniqueCombos").checked = !!savedProgress.uiData.uniqueCombos;
+          document.getElementById("useSuperSecure").checked = !!savedProgress.uiData.useSuperSecure;
+          
+          document.getElementById("useDynamic").checked = !!savedProgress.uiData.useDynamic;
+          document.getElementById("bruteAllDates").checked = !!savedProgress.uiData.bruteAllDates;
+          document.getElementById("bruteRangeDates").checked = !!savedProgress.uiData.bruteRangeDates;
+          
+          if (savedProgress.uiData.cipherDate) document.getElementById("cipherDate").value = savedProgress.uiData.cipherDate;
+          if (savedProgress.uiData.dateFrom) document.getElementById("dateFrom").value = savedProgress.uiData.dateFrom;
+          if (savedProgress.uiData.dateTo) document.getElementById("dateTo").value = savedProgress.uiData.dateTo;
+
+          toggleDateVisibility();
+          if (savedProgress.uiData.bruteAllDates) toggleDateMode('all');
+          if (savedProgress.uiData.bruteRangeDates) toggleDateMode('range');
+
+          document.getElementById("resumeBtn").style.display = "block";
+          document.getElementById("resumeBtn").textContent = `▶️ Відновити прогрес (Крок №${savedProgress.totalCheckedCount + 1})`;
+          
+          document.getElementById("statusText").innerHTML = `ℹ️ Знайдено збережену сесію (Зупинено на кроці ${savedProgress.totalCheckedCount})`;
+          
+          if (savedProgress.isFileMode) {
+            document.getElementById("log").textContent = `⚠️ Увага! Сесія була запущена через ФАЙЛ (${savedProgress.fileName}).\nБудь ласка, оберіть файл наново перед тим, як натиснути "Відновити прогрес".\n`;
+          }
+        } catch(e) { 
+          localStorage.removeItem("brute_force_session_v6"); 
+        }
+      }
+    }
+
+    function toggleDateVisibility() {
+      const isDynamic = document.getElementById("useDynamic").checked;
+      document.getElementById("dateContainer").style.opacity = isDynamic ? "1" : "0.3";
+      document.getElementById("bruteAllDates").disabled = !isDynamic;
+      document.getElementById("bruteRangeDates").disabled = !isDynamic;
+
+      if (!isDynamic) {
+        document.getElementById("cipherDate").disabled = true;
+        document.getElementById("bruteAllDates").checked = false;
+        document.getElementById("bruteRangeDates").checked = false;
+        toggleDateMode('none');
+      } else {
+        toggleDateMode('normal');
+      }
+    }
+
+    function toggleDateMode(mode) {
+      const singleDate = document.getElementById("cipherDate");
+      const allDatesCheck = document.getElementById("bruteAllDates");
+      const rangeDatesCheck = document.getElementById("bruteRangeDates");
+      const rangePickers = document.getElementById("rangePickers");
+      const dateFrom = document.getElementById("dateFrom");
+      const dateTo = document.getElementById("dateTo");
+
+      if (mode === 'all') {
+        rangeDatesCheck.checked = false;
+        singleDate.disabled = true;
+        singleDate.style.opacity = "0.4";
+        rangePickers.style.display = "none";
+        dateFrom.disabled = true; dateTo.disabled = true;
+      } else if (mode === 'range') {
+        allDatesCheck.checked = false;
+        singleDate.disabled = true;
+        singleDate.style.opacity = "0.4";
+        rangePickers.style.display = "flex";
+        rangePickers.style.opacity = "1";
+        dateFrom.disabled = false; dateTo.disabled = false;
+      } else if (mode === 'normal') {
+        if (!allDatesCheck.checked && !rangeDatesCheck.checked) {
+          singleDate.disabled = false;
+          singleDate.style.opacity = "1";
+          rangePickers.style.display = "none";
+        }
+      } else {
+        singleDate.disabled = true;
+        rangePickers.style.display = "none";
+      }
+    }
+
+    function toggleInputs(source) {
+      const fileInput = document.getElementById("fileInput");
+      const textInput = document.getElementById("encryptedText");
+      if (source === 'file' && fileInput.files.length > 0) {
+        textInput.value = ""; textInput.disabled = true;
+      } else if (source === 'text' && textInput.value.trim() !== "") {
+        fileInput.value = ""; textInput.disabled = false;
+      } else { textInput.disabled = false; }
+    }
+
+    function collectDictionaryElements() {
+      let elements = [];
+      const rawInput = document.getElementById("dictionaryInput").value;
+      const customElements = rawInput.split(",").map(i => i.trim()).filter(i => i !== "");
+      elements.push(...customElements);
+      
+      if (document.getElementById("setDigits").checked) elements.push(...["0","1","2","3","4","5","6","7","8","9"]);
+      if (document.getElementById("setLatLow").checked) elements.push(...["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z"]);
+      if (document.getElementById("setLatUp").checked) elements.push(...["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]);
+      if (document.getElementById("setCyrLow").checked) elements.push(...["а","б","в","г","д","е","є","ж","з","и","і","ї","й","к","л","м","н","о","п","р","с","т","у","ф","х","ц","ч","ш","щ","ь","ю","я","ё","ъ","ы","э"]);
+      if (document.getElementById("setCyrUp").checked) elements.push(...["А","В","Г","Д","Е","Є","Ж","З","И","І","Ї","Й","К","Л","М","Н","О","П","Р","С","Т","У","Ф","Х","Ц","Ч","Ш","Щ","Ь","Ю","Я","Ё","Ъ","Ы","Э"]);
+      
+      return Array.from(new Set(elements));
+    }
+
+    function* generateCombinationsOnTheFly(elements, maxDepth, uniqueOnly, minLen, maxLen) {
+      let currentLevel = [""];
+      let currentDepth = 0;
+
+      while (currentLevel.length > 0 && currentDepth < maxDepth) {
+        let nextLevel = [];
+        for (let base of currentLevel) {
+          for (let el of elements) {
+            if (uniqueOnly && base.includes(el)) continue;
+            
+            let combo = base + el;
+            if (combo.length > 90) continue;
+            
+            if (combo.length >= minLen && combo.length <= maxLen) {
+              yield combo;
+            }
+            
+            if (combo.length < maxLen) {
+              nextLevel.push(combo);
+            }
+          }
+        }
+        currentLevel = nextLevel;
+        currentDepth++;
+      }
+    }
+
+    function countExactCombinations(elements, uniqueOnly, minLen, maxLen) {
+      let count = 0;
+      const testGenerator = generateCombinationsOnTheFly(elements, maxLen + 2, uniqueOnly, minLen, maxLen);
+      for (let _ of testGenerator) {
+        count++;
+      }
+      return count;
+    }
+
+    function formatTimeRemaining(seconds) {
+      if (!isFinite(seconds) || seconds < 0) return "розрахунок...";
+      if (seconds < 60) return `${Math.round(seconds)} сек`;
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.round(seconds % 60);
+      if (mins < 60) return `${mins} хв ${secs} сек`;
+      const hours = Math.floor(mins / 60);
+      const remMins = mins % 60;
+      if (hours < 24) return `${hours} год ${remMins} хв`;
+      const days = Math.floor(hours / 24);
+      const remHours = hours % 24;
+      return `${days} дн ${remHours} год`;
+    }
+
+    function getDayOfYear(date) {
+      const start = new Date(date.getFullYear(), 0, 0);
+      return Math.floor((date - start) / (1000 * 60 * 60 * 24));
+    }
+
+    async function computeTail(password, day) {
+      const enc = new TextEncoder();
+      const hashBuffer = await crypto.subtle.digest("SHA-256", enc.encode(password + day.toString()));
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 32);
+    }
+
+    async function getKey(password, salt, superSecure) {
+      const hash = await argon2.hash({
+        pass: password, salt: salt,
+        time: superSecure ? 100 : 10, mem: superSecure ? 256*1024 : 40*1024,
+        parallelism: superSecure ? 4 : 1, hashLen: 32, type: argon2.Argon2id
+      });
+      return await crypto.subtle.importKey("raw", hash.hash, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    }
+
+    async function initBruteForce(isResuming) {
+      const fileInput = document.getElementById("fileInput");
+      const textInput = document.getElementById("encryptedText");
+      const logDiv = document.getElementById("log");
+
+      minLenGlobal = parseInt(document.getElementById("minLen").value) || 1;
+      maxLenGlobal = parseInt(document.getElementById("maxLen").value) || 6;
+
+      if (isResuming && savedProgress) {
+        if (savedProgress.isFileMode) {
+          if (fileInput.files.length === 0) {
+            alert("Ця сесія потребує ФАЙЛ. Будь ласка, оберіть файл `.enc` наново!");
+            return;
+          }
+          globalFileName = fileInput.files[0].name;
+          globalFullBytes = new Uint8Array(await fileInput.files[0].arrayBuffer());
+        } else {
+          const base64 = textInput.value.trim();
+          if (!base64) { alert("Base64 дані відсутні в полі вводу!"); return; }
+          globalFullBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        }
+        currentIdx = savedProgress.index;
+        elementsGlobal = savedProgress.elements;
+        uniqueCombosGlobal = savedProgress.uniqueCombos;
+        totalCheckedCount = savedProgress.totalCheckedCount || currentIdx;
+        minLenGlobal = savedProgress.minLen || minLenGlobal;
+        maxLenGlobal = savedProgress.maxLen || maxLenGlobal;
+      } else {
+        currentIdx = 0;
+        totalCheckedCount = 0;
+        const isFileMode = fileInput.files.length > 0;
+        if (isFileMode) {
+          globalFileName = fileInput.files[0].name;
+          globalFullBytes = new Uint8Array(await fileInput.files[0].arrayBuffer());
+        } else {
+          const base64 = textInput.value.trim();
+          if (!base64) { alert("Вкажіть дані для розшифрування!"); return; }
+          globalFullBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+        }
+
+        elementsGlobal = collectDictionaryElements();
+        if (elementsGlobal.length === 0) { alert("Введіть хоча б одне слово або оберіть символи!"); return; }
+        uniqueCombosGlobal = document.getElementById("uniqueCombos").checked;
+      }
+
+      logDiv.textContent = isResuming ? "▶️ Відновлення сесії та запуск...\n" : "";
+      document.getElementById("startBtn").disabled = true;
+      document.getElementById("resumeBtn").style.display = "none";
+      document.getElementById("pauseBtn").disabled = false;
+      document.getElementById("stopBtn").disabled = false;
+      
+      isPaused = false;
+      isRunning = true;
+      bruteStartTime = performance.now();
+
+      const isDynamic = document.getElementById("useDynamic").checked;
+      const bruteAllDates = document.getElementById("bruteAllDates").checked;
+      const bruteRangeDates = document.getElementById("bruteRangeDates").checked;
+      const superSecure = document.getElementById("useSuperSecure").checked;
+
+      daysToTest = [];
+      if (isDynamic) {
+        if (bruteAllDates) {
+          daysToTest = Array.from({length: 366}, (_, i) => i + 1);
+        } else if (bruteRangeDates) {
+          let startDay = getDayOfYear(new Date(document.getElementById("dateFrom").value));
+          let endDay = getDayOfYear(new Date(document.getElementById("dateTo").value));
+          if (startDay > endDay) { let t = startDay; startDay = endDay; endDay = t; }
+          for (let d = startDay; d <= endDay; d++) daysToTest.push(d);
+        } else {
+          daysToTest.push(getDayOfYear(new Date(document.getElementById("cipherDate").value)));
+        }
+      } else {
+        daysToTest.push(1);
+      }
+
+      logDiv.textContent += `⏳ Аналіз словника та підрахунок комбінацій...\n`;
+      await new Promise(r => setTimeout(r, 40));
+      
+      totalEstimatedCombos = countExactCombinations(elementsGlobal, uniqueCombosGlobal, minLenGlobal, maxLenGlobal);
+
+      const salt = globalFullBytes.slice(0, 16);
+      const iv = globalFullBytes.slice(16, 28);
+      const cipherData = globalFullBytes.slice(28);
+
+      const bStart = performance.now();
+      try {
+        const bKey = await getKey("benchPass", salt, superSecure);
+        await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, bKey, cipherData);
+      } catch(e) {}
+      timePerAttemptSec = (performance.now() - bStart) / 1000;
+
+      logDiv.textContent += `⏰ Час початку: ${new Date().toLocaleTimeString('uk')}\n`;
+      logDiv.textContent += `⚙️ Налаштування довжини: від ${minLenGlobal} до ${maxLenGlobal} symbols\n`;
+      logDiv.textContent += `🧮 Точна кількість комбінацій: ${totalEstimatedCombos}\n`;
+      logDiv.textContent += `⏱️ Швидкість ядра (1 тест): ~ ${(timePerAttemptSec * 1000).toFixed(0)} мс\n`;
+      logDiv.textContent += `--------------------------------------------------------\n\n`;
+      if (document.getElementById("autoScrollCheck").checked) logDiv.scrollTop = logDiv.scrollHeight;
+
+      bruteForceLoop(salt, iv, cipherData, isDynamic, superSecure, fileInput.files.length > 0);
+    }
+
+    async function bruteForceLoop(salt, iv, cipherData, isDynamic, superSecure, isFileMode) {
+      const logDiv = document.getElementById("log");
+      const statusText = document.getElementById("statusText");
+
+      const generator = generateCombinationsOnTheFly(elementsGlobal, maxLenGlobal + 2, uniqueCombosGlobal, minLenGlobal, maxLenGlobal);
+      let loopIdx = 0;
+
+      for (let guess of generator) {
+        if (!isRunning) return;
+
+        if (loopIdx < currentIdx) {
+          loopIdx++;
+          continue;
+        }
+
+        while (isPaused) {
+          if (!isRunning) return;
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        totalCheckedCount++;
+        const autoScroll = document.getElementById("autoScrollCheck").checked;
+        
+        let etaString = "розрахунок...";
+        if (totalCheckedCount > 1) {
+          const elapsedSec = (performance.now() - bruteStartTime) / 1000;
+          const remainingCombos = Math.max(0, totalEstimatedCombos - totalCheckedCount);
+          const remainingTimeSec = remainingCombos * daysToTest.length * (elapsedSec / (totalCheckedCount * daysToTest.length));
+          etaString = formatTimeRemaining(remainingTimeSec);
+        }
+
+        statusText.style.color = "#0066cc";
+        statusText.innerHTML = `⏳ Перевірка №${totalCheckedCount} з ${totalEstimatedCombos}<br><span style="font-size:0.85em; color:#555;">Залишилось часу: ~ ${etaString}</span>`;
+
+        localStorage.setItem("brute_force_session_v6", JSON.stringify({
+          index: loopIdx,
+          totalCheckedCount: totalCheckedCount,
+          elements: elementsGlobal,
+          uniqueCombos: uniqueCombosGlobal,
+          isFileMode: isFileMode,
+          fileName: globalFileName,
+          minLen: minLenGlobal,
+          maxLen: maxLenGlobal,
+          uiData: {
+            dictionaryInput: document.getElementById("dictionaryInput").value,
+            encryptedText: document.getElementById("encryptedText").value,
+            minLen: document.getElementById("minLen").value,
+            maxLen: document.getElementById("maxLen").value,
+            setDigits: document.getElementById("setDigits").checked,
+            setLatLow: document.getElementById("setLatLow").checked,
+            setLatUp: document.getElementById("setLatUp").checked,
+            setCyrLow: document.getElementById("setCyrLow").checked,
+            setCyrUp: document.getElementById("setCyrUp").checked,
+            uniqueCombos: document.getElementById("uniqueCombos").checked,
+            useSuperSecure: document.getElementById("useSuperSecure").checked,
+            useDynamic: document.getElementById("useDynamic").checked,
+            bruteAllDates: document.getElementById("bruteAllDates").checked,
+            bruteRangeDates: document.getElementById("bruteRangeDates").checked,
+            cipherDate: document.getElementById("cipherDate").value,
+            dateFrom: document.getElementById("dateFrom").value,
+            dateTo: document.getElementById("dateTo").value
+          }
+        }));
+
+        logDiv.textContent += `❌ Перевірка: "${guess}"... `;
+        if (autoScroll) logDiv.scrollTop = logDiv.scrollHeight;
+
+        if (superSecure) {
+          await new Promise(r => setTimeout(r, 50));
+        } else {
+          await new Promise(r => setTimeout(r, 1));
+        }
+
+        let matched = false;
+        let decryptedBuffer = null;
+
+        for (let day of daysToTest) {
+          let testPassword = guess;
+          if (isDynamic) testPassword += await computeTail(guess, day);
+
+          try {
+            const key = await getKey(testPassword, salt, superSecure);
+            decryptedBuffer = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, cipherData);
+            matched = true;
+            break;
+          } catch(e) {}
+        }
+
+        if (matched) {
+          localStorage.removeItem("brute_force_session_v6");
+          logDiv.textContent = logDiv.textContent.replace(`❌ Перевірка: "${guess}"... `, "");
+          logDiv.textContent += `\n🎉 ПАРОЛЬ ПІДІБРАНО: "${guess}"\n`;
+          statusText.style.color = "green";
+          statusText.innerHTML = `✅ Успішно! Пароль: "${guess}"`;
+
+          if (isFileMode) {
+            logDiv.textContent += `💾 Скачую файл...\n`;
+            const blob = new Blob([decryptedBuffer]);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = globalFileName.replace(".enc", "");
+            a.click();
+          } else {
+            const decText = new TextDecoder().decode(decryptedBuffer);
+            logDiv.textContent += `🔓 Текст:\n-------------------\n${decText}\n-------------------\n`;
+          }
+          if (autoScroll) logDiv.scrollTop = logDiv.scrollHeight;
+          uiReset();
+          return;
+        } else {
+          logDiv.textContent = logDiv.textContent.replace(`❌ Перевірка: "${guess}"... `, `❌ Ні: "${guess}"\n`);
+          if (autoScroll) logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        loopIdx++;
+      }
+
+      localStorage.removeItem("brute_force_session_v6");
+      logDiv.textContent += `\n⚠️ Перебір завершено. Комбінації вичерпано.`;
+      statusText.textContent = `❌ Пароль не знайдено.`;
+      statusText.style.color = "red";
+      uiReset();
+    }
+
+    function triggerPause() {
+      isPaused = !isPaused;
+      const pauseBtn = document.getElementById("pauseBtn");
+      const statusText = document.getElementById("statusText");
+      
+      if (isPaused) {
+        pauseBtn.textContent = "▶️ Продовжити";
+        pauseBtn.style.backgroundColor = "#28a745";
+        statusText.textContent = `⏸️ Перебір на паузі.`;
+        statusText.style.color = "orange";
+      } else {
+        pauseBtn.textContent = "⏸️ Пауза";
+        pauseBtn.style.backgroundColor = "#ffc107";
+      }
+    }
+
+    function triggerStop() {
+      isRunning = false;
+      localStorage.removeItem("brute_force_session_v6");
+      document.getElementById("log").textContent += `\n🛑 Перебір скинуто користувачем.`;
+      document.getElementById("statusText").textContent = `🛑 Скинуто.`;
+      document.getElementById("statusText").style.color = "red";
+      uiReset();
+    }
+
+    function uiReset() {
+      isRunning = false;
+      isPaused = false;
+      document.getElementById("startBtn").disabled = false;
+      document.getElementById("pauseBtn").disabled = true;
+      document.getElementById("stopBtn").disabled = true;
+      document.getElementById("resumeBtn").style.display = "none";
+      const pauseBtn = document.getElementById("pauseBtn");
+      pauseBtn.textContent = "⏸️ Пауза";
+      pauseBtn.style.backgroundColor = "#ffc107";
+    }
+  </script>
+</body>
+</html>
