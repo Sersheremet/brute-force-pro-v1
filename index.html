@@ -182,6 +182,8 @@
       <label class="checkbox-item"><input type="checkbox" id="setLatUp"> 🔠 (A-Z)</label>
       <label class="checkbox-item"><input type="checkbox" id="setCyrLow"> 📋 (а-я)</label>
       <label class="checkbox-item"><input type="checkbox" id="setCyrUp"> 📋 (А-Я)</label>
+      <label class="checkbox-item"><input type="checkbox" id="setSpace"> ⚠️ Пробіл</label>
+      <label class="checkbox-item"><input type="checkbox" id="setSpecials"> ⚡ (!@#$%^&*()_+-=)</label>
     </div>
   </div>
 
@@ -286,6 +288,8 @@
           document.getElementById("setLatUp").checked = !!savedProgress.uiData.setLatUp;
           document.getElementById("setCyrLow").checked = !!savedProgress.uiData.setCyrLow;
           document.getElementById("setCyrUp").checked = !!savedProgress.uiData.setCyrUp;
+          if (savedProgress.uiData.hasOwnProperty("setSpace")) document.getElementById("setSpace").checked = !!savedProgress.uiData.setSpace;
+          if (savedProgress.uiData.hasOwnProperty("setSpecials")) document.getElementById("setSpecials").checked = !!savedProgress.uiData.setSpecials;
           document.getElementById("uniqueCombos").checked = !!savedProgress.uiData.uniqueCombos;
           document.getElementById("useSuperSecure").checked = !!savedProgress.uiData.useSuperSecure;
           
@@ -385,6 +389,8 @@
       if (document.getElementById("setLatUp").checked) elements.push(...["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]);
       if (document.getElementById("setCyrLow").checked) elements.push(...["а","б","в","г","д","е","є","ж","з","и","і","ї","й","к","л","м","н","о","п","р","с","т","у","ф","х","ц","ч","ш","щ","ь","ю","я","ё","ъ","ы","э"]);
       if (document.getElementById("setCyrUp").checked) elements.push(...["А","В","Г","Д","Е","Є","Ж","З","И","І","Ї","Й","К","Л","М","Н","О","П","Р","С","Т","У","Ф","Х","Ц","Ч","Ш","Щ","Ь","Ю","Я","Ё","Ъ","Ы","Э"]);
+      if (document.getElementById("setSpace").checked) elements.push(" ");
+      if (document.getElementById("setSpecials").checked) elements.push(...["!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+", "-", "="]);
       
       return Array.from(new Set(elements));
     }
@@ -433,10 +439,10 @@
       if (mins < 60) return `${mins} хв ${secs} сек`;
       const hours = Math.floor(mins / 60);
       const remMins = mins % 60;
-      if (hours < 24) return `${hours} год ${remMins} хв`;
+      if (hours < 24) return `${hours} god ${remMins} хв`;
       const days = Math.floor(hours / 24);
       const remHours = hours % 24;
-      return `${days} дн ${remHours} год`;
+      return `${days} дн ${remHours} god`;
     }
 
     function getDayOfYear(date) {
@@ -496,7 +502,7 @@
         } else {
           const base64 = textInput.value.trim();
           if (!base64) { alert("Вкажіть дані для розшифрування!"); return; }
-          globalFullBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          globalFullBytes = Uint8Bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         }
 
         elementsGlobal = collectDictionaryElements();
@@ -552,7 +558,7 @@
       timePerAttemptSec = (performance.now() - bStart) / 1000;
 
       logDiv.textContent += `⏰ Час початку: ${new Date().toLocaleTimeString('uk')}\n`;
-      logDiv.textContent += `⚙️ Налаштування довжини: від ${minLenGlobal} до ${maxLenGlobal} symbols\n`;
+      logDiv.textContent += `⚙️ Налаштування довжини: від ${minLenGlobal} до ${maxLenGlobal} символів\n`;
       logDiv.textContent += `🧮 Точна кількість комбінацій: ${totalEstimatedCombos}\n`;
       logDiv.textContent += `⏱️ Швидкість ядра (1 тест): ~ ${(timePerAttemptSec * 1000).toFixed(0)} мс\n`;
       logDiv.textContent += `--------------------------------------------------------\n\n`;
@@ -614,6 +620,8 @@
             setLatUp: document.getElementById("setLatUp").checked,
             setCyrLow: document.getElementById("setCyrLow").checked,
             setCyrUp: document.getElementById("setCyrUp").checked,
+            setSpace: document.getElementById("setSpace").checked,
+            setSpecials: document.getElementById("setSpecials").checked,
             uniqueCombos: document.getElementById("uniqueCombos").checked,
             useSuperSecure: document.getElementById("useSuperSecure").checked,
             useDynamic: document.getElementById("useDynamic").checked,
