@@ -16,7 +16,6 @@
   <script src="https://cdn.jsdelivr.net/npm/argon2-browser@1.18.0/dist/argon2-bundled.min.js"></script>
   
   <script>
-    // Автоматична реєстрація фонового Service Worker для автономної роботи
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
@@ -439,10 +438,10 @@
       if (mins < 60) return `${mins} хв ${secs} сек`;
       const hours = Math.floor(mins / 60);
       const remMins = mins % 60;
-      if (hours < 24) return `${hours} god ${remMins} хв`;
+      if (hours < 24) return `${hours} год ${remMins} хв`;
       const days = Math.floor(hours / 24);
       const remHours = hours % 24;
-      return `${days} дн ${remHours} god`;
+      return `${days} дн ${remHours} год`;
     }
 
     function getDayOfYear(date) {
@@ -502,7 +501,7 @@
         } else {
           const base64 = textInput.value.trim();
           if (!base64) { alert("Вкажіть дані для розшифрування!"); return; }
-          globalFullBytes = Uint8Bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+          globalFullBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
         }
 
         elementsGlobal = collectDictionaryElements();
@@ -541,7 +540,7 @@
         daysToTest.push(1);
       }
 
-      logDiv.textContent += `⏳ Аналіз словника та підрахунок комбінацій...\n`;
+      logDiv.textContent += `⏳ Αναліз словника та підрахунок комбінацій...\n`;
       await new Promise(r => setTimeout(r, 40));
       
       totalEstimatedCombos = countExactCombinations(elementsGlobal, uniqueCombosGlobal, minLenGlobal, maxLenGlobal);
@@ -669,7 +668,14 @@
             const blob = new Blob([decryptedBuffer]);
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
-            a.href = url; a.download = globalFileName.replace(".enc", "");
+            a.href = url;
+
+            let finalName = globalFileName.replace(".enc", "");
+            if (finalName.includes("folder")) {
+              finalName = finalName.replace("folder", "zip");
+            }
+
+            a.download = finalName;
             a.click();
           } else {
             const decText = new TextDecoder().decode(decryptedBuffer);
